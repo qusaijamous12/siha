@@ -37,6 +37,7 @@ class _AuthViewState extends State<AuthView> {
         child: Obx(() {
           final signingUp = auth.registering.value;
           final error = auth.error.value;
+          final busy = auth.busy.value;
           return CareList(
             children: [
               Row(
@@ -163,12 +164,12 @@ class _AuthViewState extends State<AuthView> {
                       ],
                       const SizedBox(height: 12),
                       FilledButton(
-                        onPressed: () => _submit(auth),
+                        onPressed: busy ? null : () => _submit(auth),
                         child: Text((signingUp ? 'sign_up' : 'sign_in').tr),
                       ),
                       const SizedBox(height: 5),
                       TextButton.icon(
-                        onPressed: auth.openDemo,
+                        onPressed: busy ? null : auth.openDemo,
                         icon: const Icon(
                           Icons.play_circle_outline_rounded,
                           size: 20,

@@ -1,16 +1,10 @@
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:crypto/crypto.dart';
-
 import '../../feature/auth/model/account.dart';
 import '../../feature/chat/model/chat_message.dart';
 import '../../feature/doctors/model/doctor.dart';
 import '../../feature/health/model/health_record.dart';
 
 /// In-memory implementation of the feature data contracts for the prototype.
-class DemoGateway
-    implements AuthGateway, HealthGateway, DoctorsGateway, ChatGateway {
+class DemoGateway implements HealthGateway, DoctorsGateway, ChatGateway {
   DemoGateway(DateTime now) {
     final tomorrow = DateTime(now.year, now.month, now.day + 1, 10);
     _visits[Account.demo.id] = [
@@ -20,8 +14,6 @@ class DemoGateway
     setCompleted(Account.demo.id, 'morning', now, true);
   }
 
-  final _accounts =
-      <String, ({Account account, String salt, Digest password})>{};
   final _records = <String, Map<String, HealthRecord>>{
     Account.demo.id: {for (final record in _sampleRecords) record.id: record},
   };
@@ -79,34 +71,6 @@ class DemoGateway
       slotMinutes: [630, 780, 960],
     ),
   ];
-
-  @override
-  Account? register(String name, String email, String password) {
-    if (_accounts.containsKey(email)) return null;
-    final account = Account(id: email, name: name, email: email);
-    final random = Random.secure();
-    final salt = base64Url.encode(
-      List<int>.generate(16, (_) => random.nextInt(256)),
-    );
-    _accounts[email] = (
-      account: account,
-      salt: salt,
-      password: _digest(salt, password),
-    );
-    return account;
-  }
-
-  @override
-  Account? signIn(String email, String password) {
-    final entry = _accounts[email];
-    if (entry == null || entry.password != _digest(entry.salt, password)) {
-      return null;
-    }
-    return entry.account;
-  }
-
-  Digest _digest(String salt, String password) =>
-      sha256.convert(utf8.encode('$salt:$password'));
 
   @override
   List<HealthRecord> healthRecords(String accountId) =>

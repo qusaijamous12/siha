@@ -1,9 +1,12 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:medicine_app/main.dart';
 import 'package:medicine_app/feature/doctors/view/doctor_widgets.dart';
 
 void main() {
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+
   Future<void> openApp(WidgetTester tester, {DateTime Function()? now}) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
@@ -16,6 +19,13 @@ void main() {
   }
 
   Future<void> tap(WidgetTester tester, Finder target) async {
+    if (target.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        target,
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+    }
     await tester.ensureVisible(target);
     await tester.tap(target);
     await tester.pumpAndSettle();
@@ -34,6 +44,11 @@ void main() {
     final demo = find.text('استكشف النسخة التجريبية');
     expect(Directionality.of(tester.element(demo)), TextDirection.rtl);
     await tap(tester, demo);
+    await tester.enterText(field('قراءة السكر'), '١١٠');
+    await tap(tester, find.text('احفظ وقارن'));
+    expect(find.text('ضمن النطاق المرجعي العام'), findsOneWidget);
+    expect(find.textContaining('القراءة التجريبية السابقة'), findsOneWidget);
+    await tap(tester, find.text('تابع إلى التطبيق'));
     expect(find.text('مرحباً، نور'), findsOneWidget);
     await tap(tester, tab('حسابي'));
     await tap(tester, find.text('English'));
@@ -53,6 +68,7 @@ void main() {
     await tester.enterText(field('Email address'), 'tester@example.test');
     await tester.enterText(field('Password'), 'example1');
     await tap(tester, find.widgetWithText(FilledButton, 'Create account'));
+    await tap(tester, find.text('Skip for now'));
     expect(find.text('Hello, Demo'), findsOneWidget);
 
     await tap(tester, find.text('Add condition'));
@@ -89,6 +105,7 @@ void main() {
     );
     await tester.enterText(field('Password'), 'example1');
     await tap(tester, find.widgetWithText(FilledButton, 'Sign in'));
+    await tap(tester, find.text('Skip for now'));
     expect(find.text('Hello, Demo'), findsOneWidget);
     await tap(tester, tab('My health'));
     expect(find.text('Seasonal symptoms'), findsOneWidget);
@@ -103,6 +120,7 @@ void main() {
   ) async {
     await openApp(tester);
     await tap(tester, find.text('Explore the demo'));
+    await tap(tester, find.text('Skip for now'));
     await tap(tester, tab('Doctors'));
     await tester.enterText(find.byType(TextFormField), 'Omar');
     await tester.pumpAndSettle();
@@ -142,4 +160,60 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+  testWidgets(
+    'Compares readings after restart and prompts again on foreground',
+    (tester) async {
+      await openApp(tester);
+      await tap(tester, find.text('Create account'));
+      await tester.enterText(field('Full name'), 'Check In');
+      await tester.enterText(field('Email address'), 'checkin@example.test');
+      await tester.enterText(field('Password'), 'test1234');
+      await tap(tester, find.widgetWithText(FilledButton, 'Create account'));
+      expect(find.text('Log your readings'), findsOneWidget);
+      await tap(tester, find.text('Diabetes'));
+      await tap(tester, find.text('High blood pressure'));
+      await tester.enterText(field('Glucose reading'), '١٥٠');
+      await tester.ensureVisible(field('Systolic (top number)'));
+      await tester.enterText(field('Systolic (top number)'), '142');
+      await tester.ensureVisible(field('Diastolic (bottom number)'));
+      await tester.enterText(field('Diastolic (bottom number)'), '92');
+      await tap(tester, find.text('Save and compare'));
+      expect(
+        find.text('This is your first reading of this kind.'),
+        findsWidgets,
+      );
+      await tap(tester, find.text('Continue to the app'));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await openApp(tester, now: () => DateTime(2026, 11, 15, 10));
+      expect(find.text('Log your readings'), findsOneWidget);
+      await tester.enterText(field('Glucose reading'), '115');
+      await tester.ensureVisible(field('Systolic (top number)'));
+      await tester.enterText(field('Systolic (top number)'), '121');
+      await tester.ensureVisible(field('Diastolic (bottom number)'));
+      await tester.enterText(field('Diastolic (bottom number)'), '80');
+      await tap(tester, find.text('Save and compare'));
+      expect(find.text('Within general reference range'), findsOneWidget);
+      expect(find.text('Blood sugar: down 35 mg/dL'), findsOneWidget);
+      expect(find.text('Systolic (top number): down 21 mmHg'), findsOneWidget);
+      expect(
+        find.text('Diastolic (bottom number): down 12 mmHg'),
+        findsOneWidget,
+      );
+      await tap(tester, find.text('Continue to the app'));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.text('Log your readings'), findsOneWidget);
+      await tap(tester, find.text('2 hours after starting a meal'));
+      await tester.enterText(field('Glucose reading'), '160');
+      await tap(tester, find.text('Save and compare'));
+      expect(
+        find.text('This is your first reading of this kind.'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 }

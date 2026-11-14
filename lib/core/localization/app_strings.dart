@@ -5,6 +5,149 @@ class AppStrings extends Translations {
   static const locales = [Locale('en'), Locale('ar')];
 
   static const _copy = <String, (String, String)>{
+    'auth_storage_error': (
+      'Could not access the local account. Try again.',
+      'تعذّر الوصول إلى الحساب على الجهاز. حاول مرة أخرى.',
+    ),
+    'check_in_title': ('Health check-in', 'المتابعة الصحية'),
+    'check_in_heading': ('Log your readings', 'سجّل قراءاتك'),
+    'check_in_select': (
+      'Which conditions do you want to track?',
+      'شو الحالات اللي بدك تتابعها؟',
+    ),
+    'check_in_diabetes': ('Diabetes', 'السكري'),
+    'check_in_hypertension': ('High blood pressure', 'ارتفاع ضغط الدم'),
+    'check_in_enter': (
+      'Enter one or both readings from your meter.',
+      'أدخل قراءة واحدة أو القراءتين من جهاز القياس.',
+    ),
+    'check_in_glucose': ('Blood sugar', 'سكر الدم'),
+    'check_in_glucose_value': ('Glucose reading', 'قراءة السكر'),
+    'check_in_pressure': ('Blood pressure', 'ضغط الدم'),
+    'check_in_systolic': ('Systolic (top number)', 'الانقباضي (الرقم العلوي)'),
+    'check_in_diastolic': (
+      'Diastolic (bottom number)',
+      'الانبساطي (الرقم السفلي)',
+    ),
+    'check_in_timing': ('When did you measure it?', 'إمتى قست السكر؟'),
+    'check_in_before_meal': ('Before a meal', 'قبل الأكل'),
+    'check_in_after_meal': (
+      '2 hours after starting a meal',
+      'بعد ساعتين من بدء الأكل',
+    ),
+    'check_in_mg': ('mg/dL', 'ملغ/دل'),
+    'check_in_mmhg': ('mmHg', 'ملم زئبق'),
+    'check_in_number_error': (
+      'Enter a positive whole number.',
+      'أدخل رقماً صحيحاً أكبر من صفر.',
+    ),
+    'check_in_pressure_order': (
+      'The bottom number must be lower than the top number.',
+      'لازم يكون الرقم السفلي أقل من الرقم العلوي.',
+    ),
+    'check_in_required_reading': (
+      'Enter at least one reading.',
+      'أدخل قراءة واحدة على الأقل.',
+    ),
+    'check_in_save': ('Save and compare', 'احفظ وقارن'),
+    'check_in_skip': ('Skip for now', 'تخطّي الآن'),
+    'check_in_continue': ('Continue to the app', 'تابع إلى التطبيق'),
+    'check_in_results': ('Your results', 'نتائج قراءاتك'),
+    'check_in_saved': (
+      'Your readings are saved on this device.',
+      'تم حفظ قراءاتك على هذا الجهاز.',
+    ),
+    'check_in_first_reading': (
+      'This is your first reading of this kind.',
+      'هاي أول قراءة من هذا النوع.',
+    ),
+    'check_in_previous': (
+      'Previous: @value · @date, @time',
+      'القراءة السابقة: @value · @date، @time',
+    ),
+    'check_in_previous_sample': (
+      'Previous demo reading: @value',
+      'القراءة التجريبية السابقة: @value',
+    ),
+    'check_in_unchanged': ('@label: no change', '@label: بدون تغيير'),
+    'check_in_increased': (
+      '@label: up @delta @unit',
+      '@label: ارتفع @delta @unit',
+    ),
+    'check_in_decreased': (
+      '@label: down @delta @unit',
+      '@label: انخفض @delta @unit',
+    ),
+    'check_in_status_in_range': (
+      'Within general reference range',
+      'ضمن النطاق المرجعي العام',
+    ),
+    'check_in_status_below_target': (
+      'Below the usual target',
+      'أقل من الهدف المعتاد',
+    ),
+    'check_in_status_low': ('Low reading', 'قراءة منخفضة'),
+    'check_in_status_very_low_glucose': (
+      'Very low blood sugar',
+      'انخفاض شديد في سكر الدم',
+    ),
+    'check_in_status_above_target': (
+      'Above the usual target',
+      'أعلى من الهدف المعتاد',
+    ),
+    'check_in_status_very_high_glucose': (
+      'Very high blood sugar',
+      'ارتفاع شديد في سكر الدم',
+    ),
+    'check_in_status_elevated_pressure': (
+      'Elevated reading',
+      'قراءة مرتفعة قليلاً',
+    ),
+    'check_in_status_high_pressure': (
+      'High reading • stage 1 range',
+      'قراءة مرتفعة · نطاق المرحلة الأولى',
+    ),
+    'check_in_status_very_high_pressure': (
+      'High reading • stage 2 range',
+      'قراءة مرتفعة · نطاق المرحلة الثانية',
+    ),
+    'check_in_status_severe_pressure': (
+      'Severely high blood pressure',
+      'ارتفاع شديد في ضغط الدم',
+    ),
+    'check_in_low_glucose_note': (
+      'Follow your low blood sugar plan now.',
+      'اتّبع الآن الخطة التي أعطاك إياها طبيبك للتعامل مع انخفاض السكر.',
+    ),
+    'check_in_very_low_glucose_note': (
+      'Follow your low blood sugar plan now. If you are unable to treat it yourself or are losing consciousness, get emergency help.',
+      'اتّبع الآن خطة التعامل مع انخفاض السكر. إذا لم تستطع التعامل معه بنفسك أو بدأت تفقد الوعي، اطلب مساعدة طارئة.',
+    ),
+    'check_in_very_high_glucose_note': (
+      'Seek emergency care if your blood sugar stays at 300 mg/dL or higher, or if you have trouble breathing or cannot keep fluids down.',
+      'اطلب رعاية طارئة إذا بقي السكر ٣٠٠ ملغ/دل أو أكثر، أو إذا واجهت صعوبة في التنفس أو لم تستطع الاحتفاظ بالسوائل.',
+    ),
+    'check_in_low_pressure_note': (
+      'If you feel dizzy or unwell, contact your healthcare professional.',
+      'إذا شعرت بدوخة أو بتوعّك، تواصل مع طبيبك.',
+    ),
+    'check_in_severe_pressure_note': (
+      'If you have chest pain, trouble breathing, weakness, vision changes, or trouble speaking, call local emergency services now. Otherwise, wait at least a minute and recheck. If it remains this high, contact a healthcare professional promptly.',
+      'إذا شعرت بألم في الصدر أو ضيق في التنفس أو ضعف أو تغيّر في النظر أو صعوبة في الكلام، اتصل بالطوارئ المحلية فوراً. بخلاف ذلك، انتظر دقيقة على الأقل وأعد القياس. إذا بقي الضغط مرتفعاً بهذا الشكل، تواصل سريعاً مع طبيبك.',
+    ),
+    'check_in_reference_note': (
+      'These are general adult reference ranges. Follow the targets from your care team. A single reading cannot diagnose a condition.',
+      'هذه نطاقات مرجعية عامة للبالغين. اتّبع الأهداف التي حددها طبيبك. قراءة واحدة لا تكفي لتشخيص حالة.',
+    ),
+    'check_in_load_error': (
+      'Could not load your readings. You can retry or continue to the app.',
+      'تعذّر تحميل قراءاتك. بإمكانك إعادة المحاولة أو المتابعة إلى التطبيق.',
+    ),
+    'check_in_save_error': (
+      'Could not save on this device. Try again.',
+      'تعذّر الحفظ على هذا الجهاز. حاول مرة أخرى.',
+    ),
+    'check_in_retry': ('Try again', 'حاول مرة أخرى'),
     'brand': ('Saha', 'صحة'),
     'auth_title': ('Your health,\nall in one place.', 'صحتك،\nفي مكان واحد.'),
     'auth_subtitle': (
@@ -19,8 +162,8 @@ class AppStrings extends Translations {
       'نسخة تجريبية · استخدم بيانات نموذجية',
     ),
     'demo_profile': (
-      'This demo uses fictional doctors. Accounts and changes last for this app session.',
-      'تستخدم هذه النسخة أطباء افتراضيين. تبقى الحسابات والتغييرات خلال جلسة التطبيق.',
+      'This demo uses fictional doctors. Your demo account and check-in readings stay on this device. Other changes last for this session.',
+      'تستخدم هذه النسخة أطباء افتراضيين. يبقى حسابك التجريبي وقراءات المتابعة على هذا الجهاز. التغييرات الأخرى تبقى خلال الجلسة.',
     ),
     'name': ('Full name', 'الاسم الكامل'),
     'email': ('Email address', 'البريد الإلكتروني'),

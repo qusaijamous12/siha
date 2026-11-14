@@ -11,6 +11,8 @@ class Account {
 }
 
 abstract interface class AuthGateway {
-  Account? signIn(String email, String password);
-  Account? register(String name, String email, String password);
+  Future<Account?> restoreSession();
+  Future<void> saveSession(Account? account);
+  Future<Account?> signIn(String email, String password);
+  Future<Account?> register(String name, String email, String password);
 }

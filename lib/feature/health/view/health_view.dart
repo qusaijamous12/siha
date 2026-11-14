@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/care_widgets.dart';
+import '../../check_in/controller/check_in_controller.dart';
 import '../controller/health_controller.dart';
 import '../model/health_record.dart';
 import 'record_form.dart';
@@ -23,6 +24,12 @@ class HealthView extends StatelessWidget {
       return CareList(
         children: [
           PageIntro('health'.tr, 'health_intro'.tr),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: Get.find<CheckInController>().requestPrompt,
+            icon: const Icon(Icons.monitor_heart_outlined),
+            label: Text('check_in_title'.tr),
+          ),
           const SizedBox(height: 18),
           Wrap(
             spacing: 8,

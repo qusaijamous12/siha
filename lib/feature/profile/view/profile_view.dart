@@ -78,11 +78,22 @@ class ProfileView extends StatelessWidget {
         const SizedBox(height: 16),
         Text('demo_profile'.tr, style: const TextStyle(color: AppColors.muted)),
         const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: Get.find<AuthController>().signOut,
-          icon: const Icon(Icons.logout_rounded, size: 19),
-          label: Text('sign_out'.tr),
-        ),
+        Obx(() {
+          final auth = Get.find<AuthController>();
+          final error = auth.error.value;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (error != null)
+                Text(error.tr, style: const TextStyle(color: AppColors.red)),
+              OutlinedButton.icon(
+                onPressed: auth.busy.value ? null : auth.signOut,
+                icon: const Icon(Icons.logout_rounded, size: 19),
+                label: Text('sign_out'.tr),
+              ),
+            ],
+          );
+        }),
       ],
     );
   }
