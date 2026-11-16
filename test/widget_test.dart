@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:medicine_app/feature/check_in/view/trend_chart.dart';
 import 'package:medicine_app/main.dart';
 import 'package:medicine_app/feature/doctors/view/doctor_widgets.dart';
 
@@ -18,7 +19,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> tap(WidgetTester tester, Finder target) async {
+  Future<void> reveal(WidgetTester tester, Finder target) async {
     if (target.evaluate().isEmpty) {
       await tester.scrollUntilVisible(
         target,
@@ -27,6 +28,11 @@ void main() {
       );
     }
     await tester.ensureVisible(target);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> tap(WidgetTester tester, Finder target) async {
+    await reveal(tester, target);
     await tester.tap(target);
     await tester.pumpAndSettle();
   }
@@ -39,7 +45,7 @@ void main() {
   testWidgets('Demo supports English and Arabic with RTL layout', (
     tester,
   ) async {
-    await openApp(tester);
+    await openApp(tester, now: () => DateTime(2026, 11, 14, 13));
     await tap(tester, find.text('العربية'));
     final demo = find.text('استكشف النسخة التجريبية');
     expect(Directionality.of(tester.element(demo)), TextDirection.rtl);
@@ -50,6 +56,13 @@ void main() {
     expect(find.textContaining('القراءة التجريبية السابقة'), findsOneWidget);
     await tap(tester, find.text('تابع إلى التطبيق'));
     expect(find.text('مرحباً، نور'), findsOneWidget);
+    expect(find.text('إضافة حالة'), findsNothing);
+    expect(find.textContaining('سجّل أعراض الحساسية'), findsNothing);
+    await tap(tester, find.byTooltip('التذكيرات'));
+    expect(find.textContaining('سجّل أعراض الحساسية'), findsNothing);
+    expect(find.text('دواء الصباح'), findsOneWidget);
+    expect(find.text('دواء المساء'), findsOneWidget);
+    await tap(tester, find.byTooltip('رجوع'));
     await tap(tester, tab('حسابي'));
     await tap(tester, find.text('English'));
     await tap(tester, tab('Home'));
@@ -58,7 +71,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('Registers, adds a condition and medicine, and signs in again', (
+  testWidgets('Saves tracked conditions and keeps manual medicine reminders', (
     tester,
   ) async {
     var now = DateTime(2026, 11, 14, 8, 59, 50);
@@ -71,28 +84,29 @@ void main() {
     await tap(tester, find.text('Skip for now'));
     expect(find.text('Hello, Demo'), findsOneWidget);
 
-    await tap(tester, find.text('Add condition'));
-    await tester.enterText(field('Condition name'), 'Seasonal symptoms');
-    await tester.enterText(
-      field('What should we remind you to do?'),
-      'Log symptoms',
-    );
-    await tap(tester, find.widgetWithText(FilledButton, 'Save'));
-    expect(find.text('Log symptoms'), findsOneWidget);
-    expect(find.text('Due'), findsNothing);
-    now = DateTime(2026, 11, 14, 9);
-    await tester.pump(const Duration(seconds: 10));
-    await tester.pumpAndSettle();
-    expect(find.text('Care reminder · Log symptoms'), findsOneWidget);
-    await tap(tester, find.byTooltip('Mark as done'));
-    expect(find.text('1 of 1 tasks complete'), findsOneWidget);
-    expect(find.text('Care reminder · Log symptoms'), findsNothing);
+    await tap(tester, tab('My health'));
+    expect(find.text('Add condition'), findsNothing);
+    await tap(tester, find.text('Health check-in'));
+    expect(find.byType(FilterChip), findsNWidgets(2));
+    await tap(tester, find.text('Diabetes'));
+    await tap(tester, find.text('High blood pressure'));
+    await tap(tester, find.text('Save condition selection'));
+    expect(find.text('Diabetes · High blood pressure'), findsOneWidget);
+    await tap(tester, tab('Home'));
 
     await tap(tester, find.text('Add medicine'));
     await tester.enterText(field('Medicine name'), 'Sample medicine');
     await tester.enterText(field('Dose or instructions'), 'As prescribed');
     await tap(tester, find.widgetWithText(FilledButton, 'Save'));
+    expect(find.text('Sample medicine'), findsOneWidget);
+    expect(find.text('Due'), findsNothing);
+    now = DateTime(2026, 11, 14, 9);
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pumpAndSettle();
     expect(find.text('Care reminder · Sample medicine'), findsOneWidget);
+    await tap(tester, find.byTooltip('Mark as done'));
+    expect(find.text('1 of 1 tasks complete'), findsOneWidget);
+    expect(find.text('Care reminder · Sample medicine'), findsNothing);
 
     await tap(tester, tab('Profile'));
     await tap(tester, find.text('Sign out'));
@@ -108,8 +122,7 @@ void main() {
     await tap(tester, find.text('Skip for now'));
     expect(find.text('Hello, Demo'), findsOneWidget);
     await tap(tester, tab('My health'));
-    expect(find.text('Seasonal symptoms'), findsOneWidget);
-    await tap(tester, find.text('Medicines'));
+    expect(find.text('Diabetes · High blood pressure'), findsOneWidget);
     expect(find.text('Sample medicine'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -122,6 +135,16 @@ void main() {
     await tap(tester, find.text('Explore the demo'));
     await tap(tester, find.text('Skip for now'));
     await tap(tester, tab('Doctors'));
+    await tap(tester, find.widgetWithText(ChoiceChip, 'Physical therapy'));
+    expect(find.text('Dr. Omar Khalil'), findsNothing);
+    await tap(tester, find.text('Maya Awad, Physiotherapist'));
+    await tap(tester, find.text('Book appointment'));
+    await tap(tester, find.text('11:00 AM'));
+    await tap(tester, find.text('Confirm appointment'));
+    expect(find.text('Demo appointment booked'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tap(tester, find.text('All'));
     await tester.enterText(find.byType(TextFormField), 'Omar');
     await tester.pumpAndSettle();
     expect(find.text('Dr. Lina Haddad'), findsNothing);
@@ -193,14 +216,35 @@ void main() {
       await tester.ensureVisible(field('Diastolic (bottom number)'));
       await tester.enterText(field('Diastolic (bottom number)'), '80');
       await tap(tester, find.text('Save and compare'));
-      expect(find.text('Within general reference range'), findsOneWidget);
-      expect(find.text('Blood sugar: down 35 mg/dL'), findsOneWidget);
       expect(find.text('Systolic (top number): down 21 mmHg'), findsOneWidget);
       expect(
         find.text('Diastolic (bottom number): down 12 mmHg'),
         findsOneWidget,
       );
+      expect(find.text('Large change from the previous entry'), findsOneWidget);
+      await reveal(tester, find.text('Within general reference range'));
+      expect(find.text('Blood sugar: down 35 mg/dL'), findsOneWidget);
       await tap(tester, find.text('Continue to the app'));
+      await tap(tester, tab('My health'));
+      await tap(tester, find.text('Condition trends'));
+      final chart = find.byType(TrendChart);
+      expect(
+        tester
+            .widget<TrendChart>(chart)
+            .points
+            .map((point) => point.values.single),
+        [150, 115],
+      );
+      await tap(tester, find.text('Blood pressure'));
+      expect(
+        tester.widget<TrendChart>(chart).points.map((point) => point.values),
+        [
+          [142, 92],
+          [121, 80],
+        ],
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -216,4 +260,39 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+
+  testWidgets('Shows different guidance for high and severely high readings', (
+    tester,
+  ) async {
+    await openApp(tester);
+    await tap(tester, find.text('Explore the demo'));
+
+    Future<void> submit(String glucose, String upper, String lower) async {
+      await tester.enterText(field('Glucose reading'), glucose);
+      await tester.ensureVisible(field('Systolic (top number)'));
+      await tester.enterText(field('Systolic (top number)'), upper);
+      await tester.ensureVisible(field('Diastolic (bottom number)'));
+      await tester.enterText(field('Diastolic (bottom number)'), lower);
+      await tap(tester, find.text('Save and compare'));
+    }
+
+    await submit('195', '155', '95');
+    expect(find.textContaining('Drink plain water'), findsOneWidget);
+    await reveal(tester, find.textContaining('measure again'));
+    expect(find.textContaining('measure again'), findsOneWidget);
+    expect(find.textContaining('foods with less salt'), findsOneWidget);
+    await tap(tester, find.text('Continue to the app'));
+    await tap(tester, tab('My health'));
+    await tap(tester, find.text('Health check-in'));
+    await submit('325', '192', '124');
+    expect(find.textContaining('Seek emergency care'), findsOneWidget);
+    await reveal(tester, find.textContaining('call local emergency services'));
+    expect(
+      find.textContaining('call local emergency services'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('foods with less salt'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

@@ -15,7 +15,6 @@ class HealthController extends GetxController with WidgetsBindingObserver {
 
   final records = <HealthRecord>[].obs;
   final tasks = <ScheduledTask>[].obs;
-  final selectedKind = RecordKind.condition.obs;
   final _dismissed = <String>{};
   final foregroundAlert = Rxn<ScheduledTask>();
 
@@ -29,7 +28,6 @@ class HealthController extends GetxController with WidgetsBindingObserver {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     _session = ever(_auth.account, (_) {
-      selectedKind.value = RecordKind.condition;
       _dismissed.clear();
       _load();
       if (_auth.account.value == null) {

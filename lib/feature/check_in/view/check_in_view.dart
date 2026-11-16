@@ -113,7 +113,12 @@ class _CheckInViewState extends State<CheckInView> {
                         ),
                       TextButton(
                         onPressed: busy ? null : _skip,
-                        child: Text('check_in_skip'.tr),
+                        child: Text(
+                          (_checkIn.hasConditionChanges
+                                  ? 'check_in_save_conditions'
+                                  : 'check_in_skip')
+                              .tr,
+                        ),
                       ),
                     ],
                   ],

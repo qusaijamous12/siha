@@ -21,35 +21,42 @@ class LocalCheckInStore implements CheckInStore {
     final json = jsonDecode(saved) as Map<String, dynamic>;
     final conditions = json['conditions'] as List<dynamic>;
     final glucose = json['glucose'] as Map<String, dynamic>;
-    final pressure = json['pressure'] as Map<String, dynamic>?;
     return CheckInHistory(
       conditions: TrackedCondition.values
           .where((condition) => conditions.contains(condition.name))
           .toSet(),
-      glucose: {
+      glucose: [
         for (final timing in MealTiming.values)
-          if (glucose[timing.name] case {
-            'at': int at,
-            'value': int value,
-            'sample': bool sample,
-          })
-            timing: GlucoseReading(
-              DateTime.fromMillisecondsSinceEpoch(at),
-              value,
+          for (final reading in _savedReadings(glucose[timing.name]))
+            GlucoseReading(
+              _date(reading),
+              reading['value'] as int,
               timing,
-              isSample: sample,
+              isSample: reading['sample'] as bool? ?? false,
             ),
-      },
-      pressure: pressure == null
-          ? null
-          : PressureReading(
-              DateTime.fromMillisecondsSinceEpoch(pressure['at'] as int),
-              pressure['systolic'] as int,
-              pressure['diastolic'] as int,
-              isSample: pressure['sample'] as bool,
-            ),
+      ],
+      pressure: [
+        for (final reading in _savedReadings(json['pressure']))
+          PressureReading(
+            _date(reading),
+            reading['systolic'] as int,
+            reading['diastolic'] as int,
+            isSample: reading['sample'] as bool? ?? false,
+          ),
+      ],
     );
   }
+
+  // Older installs kept one object per reading type. Keep it as the first point.
+  Iterable<Map<String, dynamic>> _savedReadings(Object? value) =>
+      switch (value) {
+        final Map<String, dynamic> reading => [reading],
+        final List<dynamic> readings => readings.cast<Map<String, dynamic>>(),
+        _ => const [],
+      };
+
+  DateTime _date(Map<String, dynamic> reading) =>
+      DateTime.fromMillisecondsSinceEpoch(reading['at'] as int);
 
   @override
   Future<void> save(String accountId, CheckInHistory history) => _storage.write(
@@ -59,20 +66,25 @@ class LocalCheckInStore implements CheckInStore {
           .map((condition) => condition.name)
           .toList(),
       'glucose': {
-        for (final entry in history.glucose.entries)
-          entry.key.name: {
-            'at': entry.value.measuredAt.millisecondsSinceEpoch,
-            'value': entry.value.value,
-            'sample': entry.value.isSample,
-          },
+        for (final timing in MealTiming.values)
+          timing.name: [
+            for (final entry in history.glucoseAt(timing))
+              {
+                'at': entry.measuredAt.millisecondsSinceEpoch,
+                'value': entry.value,
+                'sample': entry.isSample,
+              },
+          ],
       },
-      if (history.pressure case final pressure?)
-        'pressure': {
-          'at': pressure.measuredAt.millisecondsSinceEpoch,
-          'systolic': pressure.systolic,
-          'diastolic': pressure.diastolic,
-          'sample': pressure.isSample,
-        },
+      'pressure': [
+        for (final entry in history.pressure)
+          {
+            'at': entry.measuredAt.millisecondsSinceEpoch,
+            'systolic': entry.systolic,
+            'diastolic': entry.diastolic,
+            'sample': entry.isSample,
+          },
+      ],
     }),
   );
 }

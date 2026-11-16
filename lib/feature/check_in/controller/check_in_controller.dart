@@ -20,14 +20,17 @@ class CheckInController extends GetxController with WidgetsBindingObserver {
   final error = RxnString();
 
   late final Worker _session;
-  CheckInHistory? _history;
+  final history = Rxn<CheckInHistory>();
   bool _wasHidden = false;
 
   @override
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
-    _session = ever(_auth.account, (_) => requestPrompt());
+    _session = ever(_auth.account, (_) {
+      history.value = null;
+      requestPrompt();
+    });
   }
 
   @override
@@ -53,16 +56,16 @@ class CheckInController extends GetxController with WidgetsBindingObserver {
     ready.value = false;
     comparison.clear();
     conditions.clear();
-    _history = null;
     error.value = null;
     busy.value = true;
     try {
-      final history =
+      final saved =
+          history.value ??
           await _store.load(account.id) ??
           (account.isDemo ? _sampleHistory() : const CheckInHistory());
-      if (isClosed) return;
-      _history = history;
-      conditions.assignAll(history.conditions);
+      if (isClosed || _auth.account.value != account) return;
+      history.value = saved;
+      conditions.assignAll(saved.conditions);
       ready.value = true;
     } on Exception {
       if (!isClosed) error.value = 'check_in_load_error';
@@ -72,24 +75,35 @@ class CheckInController extends GetxController with WidgetsBindingObserver {
   }
 
   CheckInHistory _sampleHistory() {
-    final yesterday = _now().subtract(const Duration(days: 1));
+    final now = _now();
+    const before = [126, 138, 130, 145];
+    const after = [160, 171, 157, 165];
+    const upper = [128, 141, 132, 136];
+    const lower = [80, 89, 82, 86];
+    DateTime day(int index) =>
+        DateTime(now.year, now.month, now.day - 4 + index, 8);
     return CheckInHistory(
       conditions: TrackedCondition.values.toSet(),
-      glucose: {
-        MealTiming.beforeMeal: GlucoseReading(
-          yesterday,
-          145,
-          MealTiming.beforeMeal,
-          isSample: true,
-        ),
-        MealTiming.twoHoursAfterMeal: GlucoseReading(
-          yesterday,
-          165,
-          MealTiming.twoHoursAfterMeal,
-          isSample: true,
-        ),
-      },
-      pressure: PressureReading(yesterday, 136, 86, isSample: true),
+      glucose: [
+        for (var i = 0; i < before.length; i++) ...[
+          GlucoseReading(
+            day(i),
+            before[i],
+            MealTiming.beforeMeal,
+            isSample: true,
+          ),
+          GlucoseReading(
+            day(i).add(const Duration(hours: 2)),
+            after[i],
+            MealTiming.twoHoursAfterMeal,
+            isSample: true,
+          ),
+        ],
+      ],
+      pressure: [
+        for (var i = 0; i < upper.length; i++)
+          PressureReading(day(i), upper[i], lower[i], isSample: true),
+      ],
     );
   }
 
@@ -120,48 +134,51 @@ class CheckInController extends GetxController with WidgetsBindingObserver {
     final pressureReading = systolic == null || diastolic == null
         ? null
         : PressureReading(now, systolic, diastolic);
-    final history = _history!;
-    final next = CheckInHistory(
+    final saved = history.value!;
+    final sameTiming = saved.glucoseAt(timing).toList();
+    final next = saved.copyWith(
       conditions: conditions.toSet(),
-      glucose: {...history.glucose, timing: ?glucoseReading},
-      pressure: pressureReading ?? history.pressure,
+      glucose: glucoseReading == null
+          ? null
+          : [
+              ...saved.glucose.where((reading) => reading.timing != timing),
+              ...appendReading(sameTiming, glucoseReading),
+            ],
+      pressure: pressureReading == null
+          ? null
+          : appendReading(saved.pressure, pressureReading),
     );
     if (await _save(next) && !isClosed) {
       comparison.assignAll([
         if (glucoseReading != null)
-          ReadingComparison(glucoseReading, history.glucose[timing]),
+          ReadingComparison(glucoseReading, sameTiming.lastOrNull),
         if (pressureReading != null)
-          ReadingComparison(pressureReading, history.pressure),
+          ReadingComparison(pressureReading, saved.pressure.lastOrNull),
       ]);
     }
   }
 
-  Future<bool> skip() async {
-    if (busy.value) return false;
-    final history = _history;
-    if (history == null ||
-        (history.conditions.length == conditions.length &&
-            history.conditions.containsAll(conditions))) {
-      return true;
-    }
-    return _save(
-      CheckInHistory(
-        conditions: conditions.toSet(),
-        glucose: history.glucose,
-        pressure: history.pressure,
-      ),
-    );
+  bool get hasConditionChanges {
+    final saved = history.value?.conditions;
+    return saved != null &&
+        (saved.length != conditions.length || !saved.containsAll(conditions));
   }
 
-  Future<bool> _save(CheckInHistory history) async {
+  Future<bool> skip() async {
+    if (busy.value) return false;
+    if (!hasConditionChanges) return true;
+    return _save(history.value!.copyWith(conditions: conditions.toSet()));
+  }
+
+  Future<bool> _save(CheckInHistory next) async {
     final account = _auth.account.value;
     if (account == null || busy.value) return false;
     busy.value = true;
     error.value = null;
     try {
-      await _store.save(account.id, history);
-      if (isClosed) return false;
-      _history = history;
+      await _store.save(account.id, next);
+      if (isClosed || _auth.account.value != account) return false;
+      history.value = next;
       return true;
     } on Exception {
       if (!isClosed) error.value = 'check_in_save_error';

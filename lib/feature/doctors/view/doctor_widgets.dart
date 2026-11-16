@@ -16,6 +16,7 @@ class DoctorAvatar extends StatelessWidget {
     final (background, foreground) = switch (doctor.specialty) {
       Specialty.family => (AppColors.mint, AppColors.forest),
       Specialty.cardiology => (AppColors.lilac, AppColors.purple),
+      Specialty.physiotherapy => (AppColors.mint, AppColors.green),
       Specialty.dermatology => (AppColors.amber, AppColors.rust),
     };
     final initials = Localizations.localeOf(context).languageCode == 'ar'

@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/care_widgets.dart';
 import '../../check_in/controller/check_in_controller.dart';
+import '../../check_in/model/vital_reading.dart';
+import '../../check_in/view/condition_trends_view.dart';
 import '../controller/health_controller.dart';
 import '../model/health_record.dart';
 import 'record_form.dart';
@@ -14,53 +16,51 @@ class HealthView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final health = Get.find<HealthController>();
+    final checkIn = Get.find<CheckInController>();
     return Obx(() {
-      final kind = health.selectedKind.value;
-      final records = health.records
-          .where((record) => record.kind == kind)
+      final medicines = health.records
+          .where((record) => record.kind == RecordKind.medicine)
           .toList();
-      final isMedicine = kind == RecordKind.medicine;
-      final action = (isMedicine ? 'add_medicine' : 'add_condition').tr;
+      final tracked = checkIn.history.value?.conditions ?? {};
       return CareList(
         children: [
           PageIntro('health'.tr, 'health_intro'.tr),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+          SectionTitle('conditions'.tr),
+          const SizedBox(height: 8),
+          Text(
+            tracked.isEmpty
+                ? 'tracked_conditions_empty'.tr
+                : TrackedCondition.values
+                      .where(tracked.contains)
+                      .map((condition) => ('check_in_${condition.name}').tr)
+                      .join(' · '),
+            style: const TextStyle(color: AppColors.muted),
+          ),
+          const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: Get.find<CheckInController>().requestPrompt,
+            onPressed: checkIn.requestPrompt,
             icon: const Icon(Icons.monitor_heart_outlined),
             label: Text('check_in_title'.tr),
           ),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (final type in RecordKind.values)
-                ChoiceChip(
-                  label: Text(
-                    (type == RecordKind.medicine ? 'medicines' : 'conditions')
-                        .tr,
-                  ),
-                  selected: type == kind,
-                  onSelected: (_) => health.selectedKind.value = type,
-                ),
-            ],
+          const SizedBox(height: 6),
+          OutlinedButton.icon(
+            onPressed: () => openPage(context, const ConditionTrendsView()),
+            icon: const Icon(Icons.show_chart_rounded),
+            label: Text('trends_title'.tr),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 18),
+          SectionTitle('medicines'.tr),
+          const SizedBox(height: 8),
           FilledButton.icon(
-            onPressed: () => showRecordForm(context, kind),
+            onPressed: () => showMedicineForm(context),
             icon: const Icon(Icons.add_rounded),
-            label: Text(action),
+            label: Text('add_medicine'.tr),
           ),
-          const SizedBox(height: 18),
-          if (records.isEmpty)
-            EmptyCard(
-              isMedicine
-                  ? Icons.medication_outlined
-                  : Icons.monitor_heart_outlined,
-              (isMedicine ? 'empty_medicines' : 'empty_conditions').tr,
-            ),
-          for (final record in records)
+          const SizedBox(height: 14),
+          if (medicines.isEmpty)
+            EmptyCard(Icons.medication_outlined, 'empty_medicines'.tr),
+          for (final record in medicines)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: _RecordTile(record: record),
@@ -78,17 +78,12 @@ class _RecordTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final medicine = record.kind == RecordKind.medicine;
     final reminder = record.reminder;
     return CareCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CareIcon(
-            medicine ? Icons.medication_outlined : Icons.monitor_heart_outlined,
-            background: medicine ? AppColors.mint : AppColors.lilac,
-            color: medicine ? AppColors.green : AppColors.purple,
-          ),
+          const CareIcon(Icons.medication_outlined),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -138,7 +133,7 @@ class _RecordTile extends StatelessWidget {
 
   Future<void> _select(BuildContext context, String value) async {
     if (value == 'edit') {
-      await showRecordForm(context, record.kind, record: record);
+      await showMedicineForm(context, record: record);
     } else if (await confirmAction(
       context,
       title: 'delete_record'.tr,

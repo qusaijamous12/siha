@@ -4,6 +4,8 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/care_widgets.dart';
 import '../model/vital_reading.dart';
+import '../model/reading_change.dart';
+import 'reading_change_notice.dart';
 
 extension MealTimingText on MealTiming {
   String get labelKey => switch (this) {
@@ -48,6 +50,9 @@ class ReadingResultCard extends StatelessWidget {
       (ReadingStatus.severePressure, _) => 'check_in_severe_pressure_note',
       (ReadingStatus.low, true) => 'check_in_low_glucose_note',
       (ReadingStatus.low, false) => 'check_in_low_pressure_note',
+      (ReadingStatus.aboveTarget, true) => 'check_in_high_glucose_note',
+      (ReadingStatus.highPressure || ReadingStatus.veryHighPressure, false) =>
+        'check_in_high_pressure_note',
       _ => null,
     };
     final formats = MaterialLocalizations.of(context);
@@ -93,9 +98,23 @@ class ReadingResultCard extends StatelessWidget {
           ),
           if (detailsKey != null) ...[
             const SizedBox(height: 8),
-            Text(
-              detailsKey.tr,
-              style: TextStyle(color: foreground, fontWeight: FontWeight.w600),
+            Semantics(
+              liveRegion: true,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: background,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  detailsKey.tr,
+                  style: TextStyle(
+                    color: foreground,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 10),
@@ -116,6 +135,10 @@ class ReadingResultCard extends StatelessWidget {
               style: const TextStyle(color: AppColors.muted),
             ),
             const SizedBox(height: 7),
+            if (ReadingChange.isLarge(reading, previous)) ...[
+              const ReadingChangeNotice(),
+              const SizedBox(height: 7),
+            ],
             switch ((reading, previous)) {
               (GlucoseReading current, GlucoseReading prior) => _change(
                 context,
@@ -157,18 +180,6 @@ class ReadingResultCard extends StatelessWidget {
     };
   }
 
-  Widget _change(BuildContext context, String label, int delta, String unit) {
-    final key = delta == 0
-        ? 'unchanged'
-        : delta > 0
-        ? 'increased'
-        : 'decreased';
-    return Text(
-      'check_in_$key'.trParams({
-        'label': label.tr,
-        'delta': MaterialLocalizations.of(context).formatDecimal(delta.abs()),
-        'unit': unit.tr,
-      }),
-    );
-  }
+  Widget _change(BuildContext context, String label, int delta, String unit) =>
+      Text(changeLabel(context, label, delta, unit));
 }

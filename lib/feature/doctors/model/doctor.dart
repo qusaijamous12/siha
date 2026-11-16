@@ -1,4 +1,4 @@
-enum Specialty { family, cardiology, dermatology }
+enum Specialty { family, cardiology, dermatology, physiotherapy }
 
 class Doctor {
   const Doctor({

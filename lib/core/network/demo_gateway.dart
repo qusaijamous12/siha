@@ -38,13 +38,6 @@ class DemoGateway implements HealthGateway, DoctorsGateway, ChatGateway {
       reminder: DailyReminder(minuteOfDay: 1200),
       isSample: true,
     ),
-    HealthRecord(
-      id: 'allergies',
-      kind: RecordKind.condition,
-      name: 'demo_condition',
-      reminder: DailyReminder(minuteOfDay: 750, action: 'demo_action'),
-      isSample: true,
-    ),
   ];
 
   @override
@@ -69,6 +62,13 @@ class DemoGateway implements HealthGateway, DoctorsGateway, ChatGateway {
       initials: 'SN',
       arabicInitials: 'سن',
       slotMinutes: [630, 780, 960],
+    ),
+    Doctor(
+      id: 'maya',
+      specialty: Specialty.physiotherapy,
+      initials: 'MA',
+      arabicInitials: 'مع',
+      slotMinutes: [540, 660, 870],
     ),
   ];
 

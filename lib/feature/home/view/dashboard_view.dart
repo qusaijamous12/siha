@@ -58,7 +58,7 @@ class DashboardView extends StatelessWidget {
               final columns =
                   width >= 275 &&
                       MediaQuery.textScalerOf(context).scale(14) <= 21
-                  ? 3
+                  ? 2
                   : 1;
               final itemWidth = (width - 10 * (columns - 1)) / columns;
               return Wrap(
@@ -72,17 +72,7 @@ class DashboardView extends StatelessWidget {
                       Icons.medication_outlined,
                       AppColors.mint,
                       AppColors.green,
-                      () => showRecordForm(context, RecordKind.medicine),
-                    ),
-                  ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: _QuickAction(
-                      'add_condition'.tr,
-                      Icons.monitor_heart_outlined,
-                      AppColors.lilac,
-                      AppColors.purple,
-                      () => showRecordForm(context, RecordKind.condition),
+                      () => showMedicineForm(context),
                     ),
                   ),
                   SizedBox(
